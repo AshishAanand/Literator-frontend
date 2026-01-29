@@ -1,6 +1,19 @@
-'use client'
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../features/auth/useAuth.ts'; // adjust path
+
 
 export default function Home() {
+    const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
+
+    const handleStartWriting = () => {
+        if (!isAuthenticated) {
+            navigate('/login');
+        } else {
+            navigate('/dashboard'); // or /profile
+        }
+    };
+
     return (
         <main className="min-h-screen bg-background text-foreground">
             {/* Header */}
@@ -9,7 +22,7 @@ export default function Home() {
                     <div className="text-2xl font-serif font-semibold tracking-tight">
                         Literator
                     </div>
-                    <button className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+                    <button onClick={handleStartWriting} className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
                         Start Writing
                     </button>
                 </nav>
@@ -31,7 +44,7 @@ export default function Home() {
                         Literator is a calm, focused space—not a social network. Write your stories, poems, essays, and research notes without distraction or pressure.
                     </p>
 
-                    <button className="mx-auto px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity">
+                    <button onClick={handleStartWriting} className="mx-auto px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity">
                         Create Your Space
                     </button>
                 </div>
@@ -166,7 +179,7 @@ export default function Home() {
                         </p>
                     </div>
 
-                    <button className="px-8 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity inline-block">
+                    <button onClick={handleStartWriting} className="px-8 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity inline-block">
                         Start Free Today
                     </button>
 
@@ -183,17 +196,6 @@ export default function Home() {
                         <div className="space-y-2">
                             <p className="font-serif text-sm font-medium">Literator</p>
                             <p className="text-xs text-muted-foreground">A quiet space for meaningful writing.</p>
-                        </div>
-                        <div className="flex gap-6 text-sm">
-                            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                                About
-                            </a>
-                            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                                Privacy
-                            </a>
-                            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                                Contact
-                            </a>
                         </div>
                     </div>
                 </div>
