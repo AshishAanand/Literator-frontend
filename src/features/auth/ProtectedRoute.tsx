@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from "./useAuth.ts";
+import {BottomNavigation} from "../../components/layouts/bottom-nav.tsx";
 
 export function ProtectedRoute() {
     const { isAuthenticated, isLoading } = useAuth();
@@ -10,5 +11,13 @@ export function ProtectedRoute() {
         return <Navigate to="/login" replace />;
     }
 
-    return <Outlet />;
+    return (
+        <div className="min-h-screen pb-16">
+            {/* Page content */}
+            <Outlet />
+
+            {/* Bottom nav only for protected routes */}
+            <BottomNavigation />
+        </div>
+    );
 }

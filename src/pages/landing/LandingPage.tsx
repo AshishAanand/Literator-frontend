@@ -8,7 +8,7 @@ export default function Home() {
 
     const handleStartWriting = () => {
         if (!isAuthenticated) {
-            navigate('/login');
+            navigate('/');
         } else {
             navigate('/dashboard'); // or /profile
         }

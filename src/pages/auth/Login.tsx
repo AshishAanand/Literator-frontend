@@ -1,71 +1,50 @@
-import { useState } from 'react'
+import {useEffect, useState} from 'react'
 import {Link} from 'react-router-dom'
 import { AuthInput } from '../../components/ui/auth-input'
 import { AuthButton } from '../../components/ui/auth-button'
 import { useNavigate } from 'react-router-dom'
-import {instance as axios} from '../../lib/axios' // your configured axios instance
 import { useAuth } from '../../features/auth/useAuth'
 
 
 export default function LoginPage() {
 
     const navigate = useNavigate()
-    const { setUser } = useAuth()
+    const { login, isAuthenticated } = useAuth()
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
 
+    /* ✅ STATE-DRIVEN REDIRECT */
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/profile', { replace: true })
+        }
+    }, [isAuthenticated, navigate])
+
     const handleSubmit = async () => {
+        if (isLoading) return
+
         setErrors({})
 
-        if (!email) {
-            setErrors({ email: 'Email is required' })
-            return
-        }
-
-        if (!password) {
-            setErrors({ password: 'Password is required' })
+        if (!email || !password) {
+            setErrors({
+                email: !email ? 'Email is required' : undefined,
+                password: !password ? 'Password is required' : undefined,
+            })
             return
         }
 
         try {
             setIsLoading(true)
-
-            const res = await axios.post('/auth/login', {
-                email,
-                password,
-            })
-
-            const { access_token } = res.data
-
-            // Store token
-            localStorage.setItem('access_token', access_token)
-
-            // Fetch user
-            const userRes = await axios.get('/user/me', {
-                headers: {
-                    Authorization: `Bearer ${access_token}`,
-                },
-            })
-
-            // Update auth state
-            setUser(userRes.data)
-
-            // Redirect
-            navigate('/profile', { replace: true })
-
+            await login({ email, password })
         } catch (err: any) {
-            if (err.status === 401) {
-                setErrors({ email: 'Email is required' })
-                setErrors({ password: 'Password is required' })
-            }
+            setErrors({ password: 'Invalid email or password' })
         } finally {
             setIsLoading(false)
         }
     }
-
 
 
     return (

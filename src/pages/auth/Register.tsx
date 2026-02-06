@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {Link} from 'react-router-dom'
 import { AuthInput } from '../../components/ui/auth-input'
 import { AuthButton } from '../../components/ui/auth-button'
-import { instance as axios } from "../../lib/axios.ts";
 import {useAuth} from "../../features/auth/useAuth.ts";
 import {useNavigate} from "react-router-dom";
 
 export default function RegisterPage() {
+    const navigate = useNavigate();
+    const { signup, isAuthenticated } = useAuth();
+
     const [formData, setFormData] = useState({
         name: '',
         username: '',
@@ -14,98 +16,86 @@ export default function RegisterPage() {
         password: '',
         confirmPassword: '',
         bio: '',
-    })
-    const navigate = useNavigate()
-    const { setUser } = useAuth()
-    const [isLoading, setIsLoading] = useState(false)
-    const [errors, setErrors] = useState<Partial<typeof formData>>({})
+    });
+
+    const [errors, setErrors] = useState<Partial<typeof formData>>({});
+    const [isLoading, setIsLoading] = useState(false);
+
+    /* ----------------------------- */
+    /* ✅ AUTO NAVIGATION AFTER LOGIN */
+    /* ----------------------------- */
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
 
     const handleChange = (field: keyof typeof formData, value: string) => {
-        setFormData((prev) => ({ ...prev, [field]: value }))
-        // Clear error for this field when user starts typing
+        setFormData((prev) => ({ ...prev, [field]: value }));
         if (errors[field]) {
-            setErrors((prev) => ({ ...prev, [field]: undefined }))
+            setErrors((prev) => ({ ...prev, [field]: undefined }));
         }
-    }
+    };
 
     const handleSubmit = async () => {
-        const newErrors: Partial<typeof formData> = {}
+        if (isLoading) return;
+
+        const newErrors: Partial<typeof formData> = {};
 
         // Validation
-        if (!formData.name.trim()) {
-            newErrors.name = 'Name is required'
-        }
+        if (!formData.name.trim()) newErrors.name = 'Name is required';
 
         if (!formData.username.trim()) {
-            newErrors.username = 'Username is required'
+            newErrors.username = 'Username is required';
         } else if (formData.username.length < 3) {
-            newErrors.username = 'Username must be at least 3 characters'
+            newErrors.username = 'Username must be at least 3 characters';
         }
 
         if (!formData.email.trim()) {
-            newErrors.email = 'Email is required'
+            newErrors.email = 'Email is required';
         } else if (!formData.email.includes('@')) {
-            newErrors.email = 'Please enter a valid email'
+            newErrors.email = 'Please enter a valid email';
         }
 
         if (!formData.password) {
-            newErrors.password = 'Password is required'
+            newErrors.password = 'Password is required';
         } else if (formData.password.length < 6) {
-            newErrors.password = 'Password must be at least 6 characters'
+            newErrors.password = 'Password must be at least 6 characters';
         }
 
         if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Passwords do not match'
+            newErrors.confirmPassword = 'Passwords do not match';
         }
 
         if (formData.bio.length > 160) {
-            newErrors.bio = 'Bio must be under 160 characters'
+            newErrors.bio = 'Bio must be under 160 characters';
         }
 
         if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors)
-            return
+            setErrors(newErrors);
+            return;
         }
 
         try {
-            setIsLoading(true)
-            setErrors({})
+            setIsLoading(true);
+            setErrors({});
 
-            // 1. Register the user
-            await axios.post('auth/register', {
+            await signup({
                 name: formData.name,
                 username: formData.username,
                 email: formData.email,
-                bio: formData.bio || null,
                 password: formData.password,
-            })
-
-
-            // 2. Perform Auto-Login
-            // We call the login endpoint using the credentials the user just typed
-            const loginRes = await axios.post('auth/login', {
-                email: formData.email,
-                password: formData.password,
-            })
-
-            const { access_token } = loginRes.data
-
-            // 4. Fetch the full user profile
-            const userRes = await axios.get('/user/me', {
-                headers: { Authorization: `Bearer ${access_token}` },
-            })
-            setUser(userRes.data)
-
-            // 5. Navigate to Dashboard
-            navigate('/dashboard', { replace: true })
+                bio: formData?.bio,
+            });
 
         } catch (err: any) {
-            const message = err.response?.data?.message || "Registration failed"
-            setErrors({ email: message })
+            const message =
+                err.response?.data?.message || 'Registration failed';
+            setErrors({ email: message });
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    };
 
 
     return (
