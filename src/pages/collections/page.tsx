@@ -1,29 +1,72 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AuthButton } from '../../components/ui/auth-button'
 import { CollectionCard } from '../../components/ui/collection-card'
 import { Plus } from 'lucide-react'
+import { instance as axios } from '../../lib/axios'
+import {CreateCollectionModal} from "../../components/ui/create-collections.tsx";
+
+type Collection = {
+    id: number
+    title: string
+    description: string
+    tag: string
+    count: number
+}
 
 export default function CollectionsPage() {
-    // Mock collections data
-    const collections = [
-        {
-            id: 1,
-            name: 'Winter reflections',
-            count: 4,
-        },
-        {
-            id: 2,
-            name: 'Poetry collection',
-            count: 8,
-        },
-        {
-            id: 3,
-            name: 'Essays and musings',
-            count: 2,
-        },
-    ]
+    const [collections, setCollections] = useState<Collection[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
-    const [isEmpty] = useState(false)
+    const [showCreateModal, setShowCreateModal] = useState(false)
+
+    async function handleCreateCollection(data: any) {
+        await axios.post('/collections', data)
+        setShowCreateModal(false)
+        setError(null)
+        try {
+            const res = await axios.get('/collections/my-collections')
+            setCollections(res.data.items) // assuming paginated response
+        } catch (err) {
+            setError('Failed to load collections')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        const fetchCollections = async () => {
+            try {
+                const res = await axios.get('/collections/my-collections')
+                setCollections(res.data.items) // assuming paginated response
+            } catch (err) {
+                setError('Failed to load collections')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchCollections()
+    }, [])
+
+    const isEmpty = !loading && collections.length === 0
+
+    // 🔄 Loading state
+    if (loading) {
+        return (
+            <div className="flex justify-center py-16 text-muted-foreground">
+                Loading collections...
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="flex justify-center py-16 text-destructive">
+                {error}
+            </div>
+        )
+    }
 
     return (
         <div className="w-full max-w-2xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -46,20 +89,20 @@ export default function CollectionsPage() {
                     <p className="text-sm text-muted-foreground mb-8 max-w-sm">
                         Collections help you organize your writing by theme, season, or any meaningful grouping that resonates with you.
                     </p>
-                    <AuthButton className="bg-primary hover:bg-primary/90">
-                        <Plus className="w-4 h-4 mr-2" />
+                    <AuthButton onClick={() => setShowCreateModal(true)} className="bg-primary hover:bg-primary/90">
+                        {/*<Plus className="w-4 h-4" />*/}
                         Create collection
                     </AuthButton>
                 </div>
             ) : (
                 <>
-                    {/* Floating Action Button */}
+                    {/* Action Button */}
                     <div className="mb-8 flex justify-end">
-                        <AuthButton
-                            className="bg-primary hover:bg-primary/90 rounded-full p-3 h-auto w-auto"
-                        >
-                            <Plus className="w-6 h-6" />
-                        </AuthButton>
+                            <AuthButton onClick={() => setShowCreateModal(true)}
+                                className="bg-primary hover:bg-primary/90 rounded-full p-3 h-auto w-auto"
+                            >
+                                <Plus className="w-6 h-6" />
+                            </AuthButton>
                     </div>
 
                     {/* Collections List */}
@@ -67,13 +110,31 @@ export default function CollectionsPage() {
                         {collections.map((collection) => (
                             <CollectionCard
                                 key={collection.id}
-                                name={collection.name}
+                                title={collection.title}
+                                description={collection.description}
+                                tag={collection.tag}
                                 count={collection.count}
                             />
                         ))}
                     </div>
                 </>
             )}
+
+            {/*<div className="mb-8 flex justify-end">*/}
+            {/*    <AuthButton*/}
+            {/*        onClick={() => setShowCreateModal(true)}*/}
+            {/*        className="bg-primary hover:bg-primary/90 rounded-full p-3 h-auto w-auto"*/}
+            {/*    >*/}
+            {/*        <Plus className="w-6 h-6" />*/}
+            {/*    </AuthButton>*/}
+            {/*</div>*/}
+
+            {/* Modal */}
+            <CreateCollectionModal
+                open={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                onSubmit={handleCreateCollection}
+            />
         </div>
     )
 }
